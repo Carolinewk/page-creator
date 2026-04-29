@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Squared Page Generator</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="controls" aria-label="Page settings">
+        <div class="brand">
+          <h1>Squared Page</h1>
+        </div>
+
+        <form id="settings" class="settings">
+          <fieldset>
+            <legend>Page</legend>
+            <label>
+              <span>Width</span>
+              <div class="number-input">
+                <input id="pageWidth" type="number" min="76" max="1889" step="1" value="794" />
+                <span>px</span>
+              </div>
+            </label>
+            <label>
+              <span>Height</span>
+              <div class="number-input">
+                <input id="pageHeight" type="number" min="76" max="2646" step="1" value="1123" />
+                <span>px</span>
+              </div>
+            </label>
+          </fieldset>
+
+          <fieldset>
+            <legend>Squares</legend>
+            <label>
+              <span>Size</span>
+              <div class="number-input">
+                <input id="squareSize" type="number" min="4" max="378" step="1" value="19" />
+                <span>px</span>
+              </div>
+            </label>
+            <label>
+              <span>Line</span>
+              <div class="number-input">
+                <input id="lineWidth" type="number" min="1" max="8" step="1" value="1" />
+                <span>px</span>
+              </div>
+            </label>
+          </fieldset>
+
+          <fieldset>
+            <legend>Output</legend>
+            <label>
+              <span>Scale</span>
+              <input id="previewScale" type="range" min="35" max="125" step="5" value="80" />
+            </label>
+            <label class="color-row">
+              <span>Grid</span>
+              <input id="gridColor" type="color" value="#cfd6df" />
+            </label>
+          </fieldset>
+        </form>
+
+        <div class="stats" aria-live="polite">
+          <span><strong id="columns">42</strong> columns</span>
+          <span><strong id="rows">59</strong> rows</span>
+          <span><strong id="totalSquares">2478</strong> squares</span>
+        </div>
+
+        <div class="actions">
+          <button id="printPage" type="button" title="Print">Print</button>
+          <button id="resetPage" type="button" title="Reset">Reset</button>
+        </div>
+      </section>
+
+      <section class="preview-wrap" aria-label="Preview">
+        <div id="page" class="page" role="img" aria-label="Generated squared page"></div>
+      </section>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>
