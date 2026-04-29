@@ -24,6 +24,17 @@ const output = {
 
 const root = document.documentElement;
 
+function getSettings() {
+  return {
+    pageWidth: numberValue("pageWidth"),
+    pageHeight: numberValue("pageHeight"),
+    squareSize: numberValue("squareSize"),
+    lineWidth: numberValue("lineWidth"),
+    previewScale: numberValue("previewScale") / 100,
+    gridColor: fields.gridColor.value || defaults.gridColor,
+  };
+}
+
 function numberValue(fieldName) {
   const field = fields[fieldName];
   const value = Number(field.value);
@@ -38,12 +49,7 @@ function numberValue(fieldName) {
 }
 
 function updatePage() {
-  const pageWidth = numberValue("pageWidth");
-  const pageHeight = numberValue("pageHeight");
-  const squareSize = numberValue("squareSize");
-  const lineWidth = numberValue("lineWidth");
-  const previewScale = numberValue("previewScale") / 100;
-  const gridColor = fields.gridColor.value || defaults.gridColor;
+  const { pageWidth, pageHeight, squareSize, lineWidth, previewScale, gridColor } = getSettings();
 
   root.style.setProperty("--page-width", `${pageWidth}px`);
   root.style.setProperty("--page-height", `${pageHeight}px`);
@@ -60,6 +66,41 @@ function updatePage() {
   output.totalSquares.textContent = (columns * rows).toLocaleString();
 }
 
+function exportPng() {
+  const { pageWidth, pageHeight, squareSize, lineWidth, gridColor } = getSettings();
+  const canvas = document.createElement("canvas");
+  const context = canvas.getContext("2d");
+
+  canvas.width = pageWidth;
+  canvas.height = pageHeight;
+
+  context.fillStyle = "#ffffff";
+  context.fillRect(0, 0, pageWidth, pageHeight);
+  context.fillStyle = gridColor;
+
+  for (let x = 0; x < pageWidth; x += squareSize) {
+    context.fillRect(x, 0, lineWidth, pageHeight);
+  }
+
+  for (let y = 0; y < pageHeight; y += squareSize) {
+    context.fillRect(0, y, pageWidth, lineWidth);
+  }
+
+  canvas.toBlob((blob) => {
+    if (!blob) {
+      return;
+    }
+
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+
+    link.href = url;
+    link.download = `squared-page-${pageWidth}x${pageHeight}.png`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }, "image/png");
+}
+
 function resetPage() {
   Object.entries(defaults).forEach(([key, value]) => {
     fields[key].value = value;
@@ -71,6 +112,8 @@ function resetPage() {
 Object.values(fields).forEach((field) => {
   field.addEventListener("input", updatePage);
 });
+
+document.querySelector("#exportPng").addEventListener("click", exportPng);
 
 document.querySelector("#printPage").addEventListener("click", () => {
   window.print();

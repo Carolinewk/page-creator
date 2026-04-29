@@ -147,7 +147,7 @@ input[type="range"] {
 .actions {
   margin-top: auto;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 10px;
 }
 
@@ -160,7 +160,7 @@ button {
   cursor: pointer;
 }
 
-button:first-child {
+#exportPng {
   border-color: var(--accent);
   background: var(--accent);
   color: #ffffff;
