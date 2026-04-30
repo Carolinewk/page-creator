@@ -70,7 +70,7 @@ function syncGrid(changedField) {
     pageWidth = columns * squareSize;
   } else if (changedField === "rows") {
     pageHeight = rows * squareSize;
-  } else if (changedField === "squareSize" || !changedField) {
+  } else if (changedField === "squareSize") {
     pageWidth = columns * squareSize;
     pageHeight = rows * squareSize;
   }
@@ -105,8 +105,21 @@ function countFromDimension(dimension, squareSize) {
   return Math.round(dimension / squareSize);
 }
 
-function updatePage(changedField) {
-  if (changedField && String(fields[changedField].value).trim() === "") {
+function hasPendingNumberInput(fieldName) {
+  const field = fields[fieldName];
+
+  if (!field || field.type !== "number") {
+    return false;
+  }
+
+  const rawValue = String(field.value).trim();
+  const value = rawValue === "" ? NaN : Number(rawValue);
+
+  return Number.isNaN(value) || value < Number(field.min) || value > Number(field.max);
+}
+
+function updatePage(changedField, forceSync = false) {
+  if (!forceSync && changedField && hasPendingNumberInput(changedField)) {
     return;
   }
 
@@ -169,6 +182,10 @@ function resetPage() {
 
 Object.values(fields).forEach((field) => {
   field.addEventListener("input", (event) => updatePage(event.currentTarget.id));
+
+  if (field.type === "number") {
+    field.addEventListener("blur", (event) => updatePage(event.currentTarget.id, true));
+  }
 });
 
 document.querySelector("#exportPng").addEventListener("click", exportPng);
