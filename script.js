@@ -1,6 +1,8 @@
 const defaults = {
   pageWidth: 798,
   pageHeight: 1121,
+  cellWidth: 19,
+  cellHeight: 19,
   columns: 42,
   rows: 59,
   lineWidth: 1,
@@ -11,6 +13,8 @@ const defaults = {
 const fields = {
   pageWidth: document.querySelector("#pageWidth"),
   pageHeight: document.querySelector("#pageHeight"),
+  cellWidth: document.querySelector("#cellWidth"),
+  cellHeight: document.querySelector("#cellHeight"),
   columns: document.querySelector("#columns"),
   rows: document.querySelector("#rows"),
   lineWidth: document.querySelector("#lineWidth"),
@@ -30,6 +34,8 @@ function getSettings() {
   return {
     pageWidth: numberValue("pageWidth"),
     pageHeight: numberValue("pageHeight"),
+    cellWidth: numberValue("cellWidth"),
+    cellHeight: numberValue("cellHeight"),
     columns: numberValue("columns"),
     rows: numberValue("rows"),
     lineWidth: numberValue("lineWidth"),
@@ -50,17 +56,31 @@ function numberValue(fieldName) {
   return clampToFieldLimits(value, field);
 }
 
-function syncGrid() {
+function syncGrid(changedField) {
   const settings = getSettings();
-  const pageWidth = settings.pageWidth;
-  const pageHeight = settings.pageHeight;
-  const columns = clampCount(settings.columns, "columns");
-  const rows = clampCount(settings.rows, "rows");
-  const cellWidth = pageWidth / columns;
-  const cellHeight = pageHeight / rows;
+  let pageWidth = settings.pageWidth;
+  let pageHeight = settings.pageHeight;
+  const cellWidth = settings.cellWidth;
+  const cellHeight = settings.cellHeight;
+  let columns = clampCount(settings.columns, "columns");
+  let rows = clampCount(settings.rows, "rows");
 
-  fields.pageWidth.value = pageWidth;
-  fields.pageHeight.value = pageHeight;
+  if (changedField === "pageWidth") {
+    columns = countForCellSize(pageWidth, cellWidth, "columns");
+  } else if (changedField === "columns" || changedField === "cellWidth") {
+    pageWidth = columns * cellWidth;
+  }
+
+  if (changedField === "pageHeight") {
+    rows = countForCellSize(pageHeight, cellHeight, "rows");
+  } else if (changedField === "rows" || changedField === "cellHeight") {
+    pageHeight = rows * cellHeight;
+  }
+
+  fields.pageWidth.value = formatNumberForInput(pageWidth);
+  fields.pageHeight.value = formatNumberForInput(pageHeight);
+  fields.cellWidth.value = formatNumberForInput(cellWidth);
+  fields.cellHeight.value = formatNumberForInput(cellHeight);
   fields.columns.value = columns;
   fields.rows.value = rows;
 
@@ -73,6 +93,10 @@ function syncGrid() {
     columns,
     rows,
   };
+}
+
+function countForCellSize(totalSize, cellSize, fieldName) {
+  return clampCount(Math.ceil(totalSize / cellSize), fieldName);
 }
 
 function clampCount(value, fieldName) {
@@ -112,6 +136,14 @@ function formatMeasurement(value) {
   return value.toLocaleString(undefined, { maximumFractionDigits: 2 });
 }
 
+function formatNumberForInput(value) {
+  if (!Number.isFinite(value)) {
+    return "";
+  }
+
+  return Number.parseFloat(value.toFixed(4)).toString();
+}
+
 function hasPendingNumberInput(fieldName) {
   const field = fields[fieldName];
 
@@ -131,7 +163,7 @@ function updatePage(changedField, forceSync = false) {
   }
 
   const { pageWidth, pageHeight, cellWidth, cellHeight, columns, rows, lineWidth, previewScale, gridColor } =
-    syncGrid();
+    syncGrid(changedField);
 
   root.style.setProperty("--page-width", `${pageWidth}px`);
   root.style.setProperty("--page-height", `${pageHeight}px`);

@@ -35,9 +35,17 @@
           <fieldset>
             <legend>Grid</legend>
             <label>
-              <span>Cell</span>
-              <div class="number-input size-output">
-                <output id="cellSize">19 x 19 px</output>
+              <span>Cell W</span>
+              <div class="number-input">
+                <input id="cellWidth" type="number" min="1" step="0.01" value="19" />
+                <span>px</span>
+              </div>
+            </label>
+            <label>
+              <span>Cell H</span>
+              <div class="number-input">
+                <input id="cellHeight" type="number" min="1" step="0.01" value="19" />
+                <span>px</span>
               </div>
             </label>
             <label>
@@ -78,6 +86,7 @@
 
         <div class="stats" aria-live="polite">
           <span><strong id="pageSize">798 x 1121</strong> px</span>
+          <span><strong id="cellSize">19 x 19 px</strong> cell size</span>
           <span><strong id="totalSquares">2478</strong> cells</span>
         </div>
 
