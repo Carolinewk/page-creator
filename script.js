@@ -44,14 +44,12 @@ function numberValue(fieldName) {
   const field = fields[fieldName];
   const rawValue = String(field.value).trim();
   const value = rawValue === "" ? NaN : Number(rawValue);
-  const min = Number(field.min);
-  const max = Number(field.max);
 
   if (Number.isNaN(value)) {
     return defaults[fieldName];
   }
 
-  return Math.min(Math.max(value, min), max);
+  return clampToFieldLimits(value, field);
 }
 
 function syncGrid(changedField) {
@@ -93,16 +91,39 @@ function syncGrid(changedField) {
 
 function clampCount(value, fieldName, squareSize) {
   const field = fields[fieldName];
-  const dimensionField = fieldName === "columns" ? fields.pageWidth : fields.pageHeight;
-  const min = Number(field.min);
-  const max = Math.max(min, Math.floor(Number(dimensionField.max) / squareSize));
   const count = Number.isFinite(value) ? value : defaults[fieldName];
 
-  return Math.min(Math.max(count, min), max);
+  return Math.round(clampToFieldLimits(count, field));
 }
 
 function countFromDimension(dimension, squareSize) {
-  return Math.round(dimension / squareSize);
+  return Math.max(1, Math.ceil(dimension / squareSize));
+}
+
+function clampToFieldLimits(value, field) {
+  const min = fieldLimit(field, "min");
+  const max = fieldLimit(field, "max");
+  let limitedValue = value;
+
+  if (min !== null) {
+    limitedValue = Math.max(limitedValue, min);
+  }
+
+  if (max !== null) {
+    limitedValue = Math.min(limitedValue, max);
+  }
+
+  return limitedValue;
+}
+
+function fieldLimit(field, key) {
+  const value = String(field[key] ?? "").trim();
+
+  if (value === "") {
+    return null;
+  }
+
+  return Number(value);
 }
 
 function hasPendingNumberInput(fieldName) {
@@ -115,7 +136,7 @@ function hasPendingNumberInput(fieldName) {
   const rawValue = String(field.value).trim();
   const value = rawValue === "" ? NaN : Number(rawValue);
 
-  return Number.isNaN(value) || value < Number(field.min) || value > Number(field.max);
+  return Number.isNaN(value);
 }
 
 function updatePage(changedField, forceSync = false) {
