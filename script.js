@@ -144,6 +144,64 @@ function formatNumberForInput(value) {
   return Number.parseFloat(value.toFixed(4)).toString();
 }
 
+function closestPerfectGrid(settings) {
+  const current = {
+    pageWidth: settings.pageWidth,
+    pageHeight: settings.pageHeight,
+    columns: settings.columns,
+    rows: settings.rows,
+  };
+  const maxSquareSize = Math.max(1, Math.floor(Math.min(current.pageWidth, current.pageHeight)));
+  let bestGrid = null;
+
+  for (let squareSize = 1; squareSize <= maxSquareSize; squareSize += 1) {
+    const columns = Math.min(current.columns, Math.floor(current.pageWidth / squareSize));
+    const rows = Math.min(current.rows, Math.floor(current.pageHeight / squareSize));
+
+    if (columns < 1 || rows < 1) {
+      continue;
+    }
+
+    const candidate = {
+      pageWidth: columns * squareSize,
+      pageHeight: rows * squareSize,
+      cellWidth: squareSize,
+      cellHeight: squareSize,
+      columns,
+      rows,
+    };
+    const score = perfectGridScore(candidate, current);
+
+    if (
+      !bestGrid ||
+      score < bestGrid.score ||
+      (score === bestGrid.score && squareSize > bestGrid.cellWidth)
+    ) {
+      bestGrid = { ...candidate, score };
+    }
+  }
+
+  return bestGrid;
+}
+
+function perfectGridScore(candidate, current) {
+  const widthLoss = (current.pageWidth - candidate.pageWidth) / current.pageWidth;
+  const heightLoss = (current.pageHeight - candidate.pageHeight) / current.pageHeight;
+  const columnLoss = (current.columns - candidate.columns) / current.columns;
+  const rowLoss = (current.rows - candidate.rows) / current.rows;
+
+  return widthLoss + heightLoss + columnLoss + rowLoss;
+}
+
+function setGridFields({ pageWidth, pageHeight, cellWidth, cellHeight, columns, rows }) {
+  fields.pageWidth.value = formatNumberForInput(pageWidth);
+  fields.pageHeight.value = formatNumberForInput(pageHeight);
+  fields.cellWidth.value = formatNumberForInput(cellWidth);
+  fields.cellHeight.value = formatNumberForInput(cellHeight);
+  fields.columns.value = columns;
+  fields.rows.value = rows;
+}
+
 function hasPendingNumberInput(fieldName) {
   const field = fields[fieldName];
 
@@ -216,6 +274,17 @@ function exportPng() {
   }, "image/png");
 }
 
+function perfectGrid() {
+  const nextGrid = closestPerfectGrid(syncGrid());
+
+  if (!nextGrid) {
+    return;
+  }
+
+  setGridFields(nextGrid);
+  updatePage();
+}
+
 function resetPage() {
   Object.entries(defaults).forEach(([key, value]) => {
     fields[key].value = value;
@@ -233,6 +302,8 @@ Object.values(fields).forEach((field) => {
 });
 
 document.querySelector("#exportPng").addEventListener("click", exportPng);
+
+document.querySelector("#perfectGrid").addEventListener("click", perfectGrid);
 
 document.querySelector("#printPage").addEventListener("click", () => {
   window.print();
