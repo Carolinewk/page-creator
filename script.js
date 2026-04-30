@@ -1,7 +1,6 @@
 const defaults = {
   pageWidth: 798,
   pageHeight: 1121,
-  squareSize: 19,
   columns: 42,
   rows: 59,
   lineWidth: 1,
@@ -12,7 +11,6 @@ const defaults = {
 const fields = {
   pageWidth: document.querySelector("#pageWidth"),
   pageHeight: document.querySelector("#pageHeight"),
-  squareSize: document.querySelector("#squareSize"),
   columns: document.querySelector("#columns"),
   rows: document.querySelector("#rows"),
   lineWidth: document.querySelector("#lineWidth"),
@@ -23,6 +21,7 @@ const fields = {
 const output = {
   pageSize: document.querySelector("#pageSize"),
   totalSquares: document.querySelector("#totalSquares"),
+  cellSize: document.querySelector("#cellSize"),
 };
 
 const root = document.documentElement;
@@ -31,7 +30,6 @@ function getSettings() {
   return {
     pageWidth: numberValue("pageWidth"),
     pageHeight: numberValue("pageHeight"),
-    squareSize: numberValue("squareSize"),
     columns: numberValue("columns"),
     rows: numberValue("rows"),
     lineWidth: numberValue("lineWidth"),
@@ -52,30 +50,17 @@ function numberValue(fieldName) {
   return clampToFieldLimits(value, field);
 }
 
-function syncGrid(changedField) {
+function syncGrid() {
   const settings = getSettings();
-  const squareSize = settings.squareSize;
-  let pageWidth = settings.pageWidth;
-  let pageHeight = settings.pageHeight;
-  let columns = clampCount(settings.columns, "columns", squareSize);
-  let rows = clampCount(settings.rows, "rows", squareSize);
-
-  if (changedField === "pageWidth") {
-    columns = clampCount(countFromDimension(pageWidth, squareSize), "columns", squareSize);
-  } else if (changedField === "pageHeight") {
-    rows = clampCount(countFromDimension(pageHeight, squareSize), "rows", squareSize);
-  } else if (changedField === "columns") {
-    pageWidth = columns * squareSize;
-  } else if (changedField === "rows") {
-    pageHeight = rows * squareSize;
-  } else if (changedField === "squareSize") {
-    pageWidth = columns * squareSize;
-    pageHeight = rows * squareSize;
-  }
+  const pageWidth = settings.pageWidth;
+  const pageHeight = settings.pageHeight;
+  const columns = clampCount(settings.columns, "columns");
+  const rows = clampCount(settings.rows, "rows");
+  const cellWidth = pageWidth / columns;
+  const cellHeight = pageHeight / rows;
 
   fields.pageWidth.value = pageWidth;
   fields.pageHeight.value = pageHeight;
-  fields.squareSize.value = squareSize;
   fields.columns.value = columns;
   fields.rows.value = rows;
 
@@ -83,21 +68,18 @@ function syncGrid(changedField) {
     ...settings,
     pageWidth,
     pageHeight,
-    squareSize,
+    cellWidth,
+    cellHeight,
     columns,
     rows,
   };
 }
 
-function clampCount(value, fieldName, squareSize) {
+function clampCount(value, fieldName) {
   const field = fields[fieldName];
   const count = Number.isFinite(value) ? value : defaults[fieldName];
 
   return Math.round(clampToFieldLimits(count, field));
-}
-
-function countFromDimension(dimension, squareSize) {
-  return Math.max(1, Math.ceil(dimension / squareSize));
 }
 
 function clampToFieldLimits(value, field) {
@@ -126,6 +108,10 @@ function fieldLimit(field, key) {
   return Number(value);
 }
 
+function formatMeasurement(value) {
+  return value.toLocaleString(undefined, { maximumFractionDigits: 2 });
+}
+
 function hasPendingNumberInput(fieldName) {
   const field = fields[fieldName];
 
@@ -144,22 +130,25 @@ function updatePage(changedField, forceSync = false) {
     return;
   }
 
-  const { pageWidth, pageHeight, squareSize, columns, rows, lineWidth, previewScale, gridColor } =
-    syncGrid(changedField);
+  const { pageWidth, pageHeight, cellWidth, cellHeight, columns, rows, lineWidth, previewScale, gridColor } =
+    syncGrid();
 
   root.style.setProperty("--page-width", `${pageWidth}px`);
   root.style.setProperty("--page-height", `${pageHeight}px`);
-  root.style.setProperty("--square-size", `${squareSize}px`);
+  root.style.setProperty("--cell-width", `${cellWidth}px`);
+  root.style.setProperty("--cell-height", `${cellHeight}px`);
   root.style.setProperty("--line-width", `${lineWidth}px`);
   root.style.setProperty("--preview-scale", previewScale);
   root.style.setProperty("--grid-color", gridColor);
 
   output.pageSize.textContent = `${pageWidth.toLocaleString()} x ${pageHeight.toLocaleString()}`;
   output.totalSquares.textContent = (columns * rows).toLocaleString();
+  output.cellSize.textContent = `${formatMeasurement(cellWidth)} x ${formatMeasurement(cellHeight)} px`;
 }
 
 function exportPng() {
-  const { pageWidth, pageHeight, squareSize, lineWidth, gridColor } = syncGrid();
+  const { pageWidth, pageHeight, cellWidth, cellHeight, columns, rows, lineWidth, gridColor } =
+    syncGrid();
   const canvas = document.createElement("canvas");
   const context = canvas.getContext("2d");
 
@@ -170,11 +159,13 @@ function exportPng() {
   context.fillRect(0, 0, pageWidth, pageHeight);
   context.fillStyle = gridColor;
 
-  for (let x = 0; x < pageWidth; x += squareSize) {
+  for (let column = 0; column <= columns; column += 1) {
+    const x = Math.min(column * cellWidth, pageWidth);
     context.fillRect(x, 0, lineWidth, pageHeight);
   }
 
-  for (let y = 0; y < pageHeight; y += squareSize) {
+  for (let row = 0; row <= rows; row += 1) {
+    const y = Math.min(row * cellHeight, pageHeight);
     context.fillRect(0, y, pageWidth, lineWidth);
   }
 

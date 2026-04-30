@@ -33,26 +33,25 @@
           </fieldset>
 
           <fieldset>
-            <legend>Squares</legend>
+            <legend>Grid</legend>
             <label>
-              <span>Size</span>
-              <div class="number-input">
-                <input id="squareSize" type="number" min="4" max="378" step="1" value="19" />
-                <span>px</span>
+              <span>Cell</span>
+              <div class="number-input size-output">
+                <output id="cellSize">19 x 19 px</output>
               </div>
             </label>
             <label>
               <span>Columns</span>
               <div class="number-input">
                 <input id="columns" type="number" min="1" step="1" value="42" />
-                <span>sq</span>
+                <span>cols</span>
               </div>
             </label>
             <label>
               <span>Rows</span>
               <div class="number-input">
                 <input id="rows" type="number" min="1" step="1" value="59" />
-                <span>sq</span>
+                <span>rows</span>
               </div>
             </label>
             <label>
@@ -79,7 +78,7 @@
 
         <div class="stats" aria-live="polite">
           <span><strong id="pageSize">798 x 1121</strong> px</span>
-          <span><strong id="totalSquares">2478</strong> squares</span>
+          <span><strong id="totalSquares">2478</strong> cells</span>
         </div>
 
         <div class="actions">
