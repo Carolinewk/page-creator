@@ -1,7 +1,9 @@
 const defaults = {
-  pageWidth: 794,
-  pageHeight: 1123,
+  pageWidth: 798,
+  pageHeight: 1121,
   squareSize: 19,
+  columns: 42,
+  rows: 59,
   lineWidth: 1,
   previewScale: 80,
   gridColor: "#cfd6df",
@@ -11,14 +13,15 @@ const fields = {
   pageWidth: document.querySelector("#pageWidth"),
   pageHeight: document.querySelector("#pageHeight"),
   squareSize: document.querySelector("#squareSize"),
+  columns: document.querySelector("#columns"),
+  rows: document.querySelector("#rows"),
   lineWidth: document.querySelector("#lineWidth"),
   previewScale: document.querySelector("#previewScale"),
   gridColor: document.querySelector("#gridColor"),
 };
 
 const output = {
-  columns: document.querySelector("#columns"),
-  rows: document.querySelector("#rows"),
+  pageSize: document.querySelector("#pageSize"),
   totalSquares: document.querySelector("#totalSquares"),
 };
 
@@ -29,6 +32,8 @@ function getSettings() {
     pageWidth: numberValue("pageWidth"),
     pageHeight: numberValue("pageHeight"),
     squareSize: numberValue("squareSize"),
+    columns: numberValue("columns"),
+    rows: numberValue("rows"),
     lineWidth: numberValue("lineWidth"),
     previewScale: numberValue("previewScale") / 100,
     gridColor: fields.gridColor.value || defaults.gridColor,
@@ -48,8 +53,54 @@ function numberValue(fieldName) {
   return Math.min(Math.max(value, min), max);
 }
 
-function updatePage() {
-  const { pageWidth, pageHeight, squareSize, lineWidth, previewScale, gridColor } = getSettings();
+function syncGrid(changedField) {
+  const settings = getSettings();
+  const squareSize = settings.squareSize;
+  let columns = settings.columns;
+  let rows = settings.rows;
+
+  if (changedField === "pageWidth") {
+    columns = clampCount(Math.round(settings.pageWidth / squareSize), "columns", squareSize);
+  }
+
+  if (changedField === "pageHeight") {
+    rows = clampCount(Math.round(settings.pageHeight / squareSize), "rows", squareSize);
+  }
+
+  columns = clampCount(columns, "columns", squareSize);
+  rows = clampCount(rows, "rows", squareSize);
+
+  const pageWidth = columns * squareSize;
+  const pageHeight = rows * squareSize;
+
+  fields.pageWidth.value = pageWidth;
+  fields.pageHeight.value = pageHeight;
+  fields.squareSize.value = squareSize;
+  fields.columns.value = columns;
+  fields.rows.value = rows;
+
+  return {
+    ...settings,
+    pageWidth,
+    pageHeight,
+    squareSize,
+    columns,
+    rows,
+  };
+}
+
+function clampCount(value, fieldName, squareSize) {
+  const field = fields[fieldName];
+  const dimensionField = fieldName === "columns" ? fields.pageWidth : fields.pageHeight;
+  const min = Number(field.min);
+  const max = Math.max(min, Math.floor(Number(dimensionField.max) / squareSize));
+
+  return Math.min(Math.max(value || defaults[fieldName], min), max);
+}
+
+function updatePage(changedField) {
+  const { pageWidth, pageHeight, squareSize, columns, rows, lineWidth, previewScale, gridColor } =
+    syncGrid(changedField);
 
   root.style.setProperty("--page-width", `${pageWidth}px`);
   root.style.setProperty("--page-height", `${pageHeight}px`);
@@ -58,16 +109,12 @@ function updatePage() {
   root.style.setProperty("--preview-scale", previewScale);
   root.style.setProperty("--grid-color", gridColor);
 
-  const columns = Math.floor(pageWidth / squareSize);
-  const rows = Math.floor(pageHeight / squareSize);
-
-  output.columns.textContent = columns.toLocaleString();
-  output.rows.textContent = rows.toLocaleString();
+  output.pageSize.textContent = `${pageWidth.toLocaleString()} x ${pageHeight.toLocaleString()}`;
   output.totalSquares.textContent = (columns * rows).toLocaleString();
 }
 
 function exportPng() {
-  const { pageWidth, pageHeight, squareSize, lineWidth, gridColor } = getSettings();
+  const { pageWidth, pageHeight, squareSize, lineWidth, gridColor } = syncGrid();
   const canvas = document.createElement("canvas");
   const context = canvas.getContext("2d");
 
@@ -110,7 +157,7 @@ function resetPage() {
 }
 
 Object.values(fields).forEach((field) => {
-  field.addEventListener("input", updatePage);
+  field.addEventListener("input", (event) => updatePage(event.currentTarget.id));
 });
 
 document.querySelector("#exportPng").addEventListener("click", exportPng);
