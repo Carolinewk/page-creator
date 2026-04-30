@@ -42,7 +42,8 @@ function getSettings() {
 
 function numberValue(fieldName) {
   const field = fields[fieldName];
-  const value = Number(field.value);
+  const rawValue = String(field.value).trim();
+  const value = rawValue === "" ? NaN : Number(rawValue);
   const min = Number(field.min);
   const max = Number(field.max);
 
@@ -56,16 +57,14 @@ function numberValue(fieldName) {
 function syncGrid(changedField) {
   const settings = getSettings();
   const squareSize = settings.squareSize;
-  let columns = settings.columns;
-  let rows = settings.rows;
-
-  if (changedField === "pageWidth") {
-    columns = clampCount(Math.round(settings.pageWidth / squareSize), "columns", squareSize);
-  }
-
-  if (changedField === "pageHeight") {
-    rows = clampCount(Math.round(settings.pageHeight / squareSize), "rows", squareSize);
-  }
+  const widthWasEdited = changedField === "pageWidth";
+  const heightWasEdited = changedField === "pageHeight";
+  let columns = widthWasEdited
+    ? Math.round(settings.pageWidth / squareSize)
+    : settings.columns;
+  let rows = heightWasEdited
+    ? Math.round(settings.pageHeight / squareSize)
+    : settings.rows;
 
   columns = clampCount(columns, "columns", squareSize);
   rows = clampCount(rows, "rows", squareSize);
@@ -99,6 +98,10 @@ function clampCount(value, fieldName, squareSize) {
 }
 
 function updatePage(changedField) {
+  if (changedField && String(fields[changedField].value).trim() === "") {
+    return;
+  }
+
   const { pageWidth, pageHeight, squareSize, columns, rows, lineWidth, previewScale, gridColor } =
     syncGrid(changedField);
 
