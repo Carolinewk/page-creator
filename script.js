@@ -57,20 +57,23 @@ function numberValue(fieldName) {
 function syncGrid(changedField) {
   const settings = getSettings();
   const squareSize = settings.squareSize;
-  const widthWasEdited = changedField === "pageWidth";
-  const heightWasEdited = changedField === "pageHeight";
-  let columns = widthWasEdited
-    ? Math.round(settings.pageWidth / squareSize)
-    : settings.columns;
-  let rows = heightWasEdited
-    ? Math.round(settings.pageHeight / squareSize)
-    : settings.rows;
+  let pageWidth = settings.pageWidth;
+  let pageHeight = settings.pageHeight;
+  let columns = clampCount(settings.columns, "columns", squareSize);
+  let rows = clampCount(settings.rows, "rows", squareSize);
 
-  columns = clampCount(columns, "columns", squareSize);
-  rows = clampCount(rows, "rows", squareSize);
-
-  const pageWidth = columns * squareSize;
-  const pageHeight = rows * squareSize;
+  if (changedField === "pageWidth") {
+    columns = clampCount(countFromDimension(pageWidth, squareSize), "columns", squareSize);
+  } else if (changedField === "pageHeight") {
+    rows = clampCount(countFromDimension(pageHeight, squareSize), "rows", squareSize);
+  } else if (changedField === "columns") {
+    pageWidth = columns * squareSize;
+  } else if (changedField === "rows") {
+    pageHeight = rows * squareSize;
+  } else if (changedField === "squareSize" || !changedField) {
+    pageWidth = columns * squareSize;
+    pageHeight = rows * squareSize;
+  }
 
   fields.pageWidth.value = pageWidth;
   fields.pageHeight.value = pageHeight;
@@ -93,8 +96,13 @@ function clampCount(value, fieldName, squareSize) {
   const dimensionField = fieldName === "columns" ? fields.pageWidth : fields.pageHeight;
   const min = Number(field.min);
   const max = Math.max(min, Math.floor(Number(dimensionField.max) / squareSize));
+  const count = Number.isFinite(value) ? value : defaults[fieldName];
 
-  return Math.min(Math.max(value || defaults[fieldName], min), max);
+  return Math.min(Math.max(count, min), max);
+}
+
+function countFromDimension(dimension, squareSize) {
+  return Math.round(dimension / squareSize);
 }
 
 function updatePage(changedField) {
